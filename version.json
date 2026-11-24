@@ -1,6 +1,6 @@
 {
-  "version": "1.4.2",
+  "version": "1.4.3",
   "engine": "1.4.2",
-  "notas": "Popup mostra a versao ativa",
+  "notas": "Busca do Adicionar atalhos procura em todos os modulos",
   "data": "2026-11-24"
 }

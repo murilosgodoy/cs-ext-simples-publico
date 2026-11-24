@@ -1831,6 +1831,10 @@
     const pq = d.querySelector("#css-pq");
     const searching = pq && pq.value.trim();
 
+    if (ctx.app === LAUNCHER_APP && searching) {
+      list.innerHTML = buscaNaInicial(ctx, norm(searching));
+      return;
+    }
     if (ctx.app === LAUNCHER_APP) {
       // Módulos (blocos) -> apps; cada app abre o menu completo
       list.innerHTML = ctx.groups.map((g) => `
@@ -1864,7 +1868,86 @@
           })).join("")}
         </section>`).join("") || `<p class="css-picker-empty">Não encontrei o menu nesta tela.</p>`;
     }
-    if (searching) pq.dispatchEvent(new Event("input"));
+    if (searching) filtrarLista(d);
+  }
+
+  // Busca na tela inicial: procura em TODAS as telas de todos os módulos,
+  // inclusive dentro de pastas fechadas. Os menus que ainda não foram lidos
+  // são carregados por carregarTodosMenus() e a lista é redesenhada.
+  function buscaNaInicial(ctx, q) {
+    let carregando = false;
+    const secoes = ctx.groups.map((g) => {
+      const rows = g.items.map((it) => {
+        const pp = apexParts(it.link);
+        const app = pp ? pp.app : "";
+        const tree = ctx.trees[app];
+        if (tree === "loading" || tree === undefined) carregando = true;
+        const linhas = [];
+        if (norm([it.label].join(" ")).includes(q)) {
+          linhas.push(pickRow({ app, path: [it.label], color: g.color, lvl: 0, sub: "Tela inicial do módulo" }));
+        }
+        if (Array.isArray(tree)) {
+          tree.forEach((t) => {
+            if (!t.link) return;
+            const full = [it.label, ...(t.path || []), t.label];
+            if (!norm(full.join(" ")).includes(q)) return;
+            linhas.push(pickRow({ app, path: full, color: g.color, lvl: 0, sub: full.slice(0, -1).join(" › ") }));
+          });
+        }
+        return linhas.join("");
+      }).join("");
+      return rows ? `
+        <section class="css-pgroup" style="--g:${esc(g.color)}">
+          <h4><span class="css-pgroup-dot"></span>${esc(g.name)}</h4>${rows}
+        </section>` : "";
+    }).join("");
+    if (secoes) return secoes + (carregando ? `<p class="css-ploading">Procurando nos outros módulos…</p>` : "");
+    return carregando
+      ? `<p class="css-ploading">Procurando nas telas dos módulos…</p>`
+      : `<p class="css-picker-empty">Nenhuma tela encontrada.</p>`;
+  }
+  let menusCarregando = null;
+  function carregarTodosMenus() {
+    const ctx = dashCtx;
+    if (!ctx || ctx.app !== LAUNCHER_APP || menusCarregando) return menusCarregando;
+    const apps = [];
+    ctx.groups.forEach((g) => g.items.forEach((it) => {
+      const pp = apexParts(it.link);
+      if (pp && pp.app && ctx.trees[pp.app] === undefined && !apps.includes(pp.app)) apps.push(pp.app);
+    }));
+    if (!apps.length) return null;
+    apps.forEach((app) => { ctx.trees[app] = "loading"; });
+    // 4 módulos por vez para não sobrecarregar o servidor
+    const fila = apps.slice();
+    const trabalhador = async () => {
+      while (fila.length) {
+        const app = fila.shift();
+        let tree = null;
+        try {
+          const link = liveAppLink(app);
+          tree = link ? await fetchAppNav(link) : null;
+        } catch (e) { console.log("[CS Simples] menu do módulo:", e); }
+        if (dashCtx !== ctx) return;
+        ctx.trees[app] = tree || [];
+        renderPicker();
+      }
+    };
+    menusCarregando = Promise.all([1, 2, 3, 4].map(trabalhador)).finally(() => { menusCarregando = null; });
+    return menusCarregando;
+  }
+  // Dentro de um módulo a lista já tem todas as telas: só esconde o que não bate.
+  function filtrarLista(d) {
+    const v = norm(d.querySelector("#css-pq").value);
+    d.querySelectorAll(".css-pgroup").forEach((sec) => {
+      let n = 0;
+      sec.querySelectorAll(".css-prow").forEach((r) => {
+        const b = r.querySelector(".css-pitem");
+        const hit = !v || (b && b.dataset.q.includes(v));
+        r.hidden = !hit;
+        if (hit) n++;
+      });
+      sec.hidden = n === 0;
+    });
   }
 
   async function toggleExpand(key) {
@@ -2005,20 +2088,15 @@
       if (first) first.click();
     });
 
-    // Busca no painel (filtra o que já está carregado/aberto)
+    // Busca no painel: na tela inicial procura em todos os módulos; dentro de um módulo filtra a lista
     const pq = d.querySelector("#css-pq");
     pq.addEventListener("input", () => {
-      const v = norm(pq.value);
-      d.querySelectorAll(".css-pgroup").forEach((sec) => {
-        let n = 0;
-        sec.querySelectorAll(".css-prow").forEach((r) => {
-          const b = r.querySelector(".css-pitem");
-          const hit = !v || (b && b.dataset.q.includes(v));
-          r.hidden = !hit;
-          if (hit) n++;
-        });
-        sec.hidden = n === 0;
-      });
+      if (dashCtx && dashCtx.app === LAUNCHER_APP) {
+        if (pq.value.trim()) carregarTodosMenus();
+        renderPicker();
+        return;
+      }
+      filtrarLista(d);
     });
 
     // Arrastar para reordenar
