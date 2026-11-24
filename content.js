@@ -1852,7 +1852,7 @@
             let inner = "";
             if (isOpen) {
               if (tree === "loading") inner = `<p class="css-ploading" style="--lvl:1">Carregando menu…</p>`;
-              else if (!tree || !tree.length) inner = `<p class="css-ploading" style="--lvl:1">Não consegui ler o menu deste módulo. Abra o módulo e use a estrela ⭐ na tela desejada.</p>`;
+              else if (!tree || !tree.length) inner = `<p class="css-ploading" style="--lvl:1">Não consegui ler o menu deste módulo. Sua sessão pode ter expirado: faça login de novo e dê F5. Ou abra o módulo e use a estrela ⭐ na tela desejada.</p>`;
               else inner = treeRows(tree, app, [it.label], g.color, k + "/", 1);
             }
             return pickRow({ app, path: [it.label], color: g.color, lvl: 0, expand: k, isOpen, sub: "Tela inicial do módulo" }) + inner;
@@ -1904,15 +1904,21 @@
           <h4><span class="css-pgroup-dot"></span>${esc(g.name)}</h4>${rows}
         </section>` : "";
     }).join("");
-    if (secoes) return secoes + (carregando ? `<p class="css-ploading">Procurando nos outros módulos…</p>` : "");
-    return carregando
-      ? `<p class="css-ploading">Procurando nas telas dos módulos…</p>`
-      : `<p class="css-picker-empty">Nenhuma tela encontrada.</p>`;
+    // Menu que veio vazio quase sempre é sessão expirada: o CS devolve a
+    // tela de login no lugar da página do módulo.
+    const falhou = !carregando && ctx.menusFalhos && ctx.menusFalhos.size > 0;
+    const avisoSessao = `<p class="css-picker-empty">Não consegui ler o menu de ${ctx.menusFalhos ? ctx.menusFalhos.size : 0} módulo(s). Sua sessão pode ter expirado: faça login de novo e dê F5.</p>`;
+    if (secoes) return secoes + (carregando ? `<p class="css-ploading">Procurando nos outros módulos…</p>` : falhou ? avisoSessao : "");
+    if (carregando) return `<p class="css-ploading">Procurando nas telas dos módulos…</p>`;
+    return falhou ? avisoSessao : `<p class="css-picker-empty">Nenhuma tela encontrada.</p>`;
   }
   let menusCarregando = null;
   function carregarTodosMenus() {
     const ctx = dashCtx;
     if (!ctx || ctx.app !== LAUNCHER_APP || menusCarregando) return menusCarregando;
+    // Tenta de novo os módulos que falharam na busca anterior.
+    if (ctx.menusFalhos) ctx.menusFalhos.forEach((app) => { delete ctx.trees[app]; });
+    ctx.menusFalhos = new Set();
     const apps = [];
     ctx.groups.forEach((g) => g.items.forEach((it) => {
       const pp = apexParts(it.link);
@@ -1932,6 +1938,7 @@
         } catch (e) { console.log("[CS Simples] menu do módulo:", e); }
         if (dashCtx !== ctx) return;
         ctx.trees[app] = tree || [];
+        if (!tree || !tree.length) ctx.menusFalhos.add(app);
         renderPicker();
       }
     };

@@ -1,6 +1,6 @@
 {
-  "version": "1.5.1",
+  "version": "1.5.2",
   "engine": "1.5.0",
-  "notas": "Atalho salvo pelo painel Adicionar abre a tela certa",
+  "notas": "Busca de telas avisa quando a sessao expirou",
   "data": "2026-11-24"
 }
