@@ -17,10 +17,11 @@ const DEFAULTS = {
   fitGrids: true,
   rows1000: true,
   osVerso: true,
-  osVersoPrint: true
+  osVersoPrint: true,
+  reportsPlus: true
 };
 const KEY = "cssSettings";
-const CHECKS = ["enabled", "exportBar", "stickyHeader", "zebra", "hover", "cleanHome", "gefLogin", "autoPilot", "dashboard", "cleanDialog", "fitGrids", "rows1000", "osVerso", "osVersoPrint"];
+const CHECKS = ["enabled", "exportBar", "stickyHeader", "zebra", "hover", "cleanHome", "gefLogin", "autoPilot", "dashboard", "cleanDialog", "fitGrids", "rows1000", "osVerso", "osVersoPrint", "reportsPlus"];
 
 const $ = (id) => document.getElementById(id);
 let settings = { ...DEFAULTS };
@@ -142,6 +143,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
 function render() {
   CHECKS.forEach((k) => { $(k).checked = !!settings[k]; });
+  // Melhorias dos relatórios desligadas: as opções abaixo não fazem efeito.
+  const rep = settings.reportsPlus !== false;
+  document.querySelectorAll("#reportsOpts input").forEach((i) => { i.disabled = !rep; });
+  $("reportsOpts").classList.toggle("off", !rep);
   $("fontSize").value = settings.fontSize;
   $("fontVal").textContent = settings.fontSize;
   $("maxWidth").value = settings.maxWidth;
@@ -162,7 +167,7 @@ function render() {
 }
 
 function bind() {
-  CHECKS.forEach((k) => { $(k).onchange = (e) => { settings[k] = e.target.checked; persistNow(); }; });
+  CHECKS.forEach((k) => { $(k).onchange = (e) => { settings[k] = e.target.checked; if (k === "reportsPlus") render(); persistNow(); }; });
   $("userName").oninput = (e) => { settings.userName = e.target.value.trim(); persist(); };
   $("userName").onchange = () => persistNow();
   $("dashNow").onclick = () => command("cssDashNow", "✔ abrindo...", true);

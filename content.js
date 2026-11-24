@@ -25,7 +25,8 @@
     fitGrids: true,    // grades mostram quantas linhas couberem na tela
     rows1000: true,    // relatórios com 1000 linhas por página
     osVerso: true,     // O.S. impressa com o RG AOO_001 no verso (os-verso.js)
-    osVersoPrint: true // abre a janela de impressão sozinho
+    osVersoPrint: true, // abre a janela de impressão sozinho
+    reportsPlus: true  // melhorias nos relatórios/grades (desligado = relatórios originais do CS)
   };
 
   const KEY = "cssSettings"; // chaves próprias: não conflita com a CS Visual Plus
@@ -144,7 +145,8 @@
     html.classList.toggle("cs-zebra", settings.zebra);
     html.classList.toggle("cs-hover", settings.hover);
     html.classList.toggle("css-clean-dialog", settings.enabled && settings.cleanDialog);
-    html.classList.toggle("css-fit-grids", settings.enabled && settings.fitGrids);
+    html.classList.toggle("css-fit-grids", relatoriosOn() && settings.fitGrids);
+    html.classList.toggle("css-reports-off", settings.enabled && !relatoriosOn());
     html.dataset.csTheme = settings.theme || "light";
 
     html.style.setProperty("--cs-primary", settings.primary);
@@ -638,8 +640,12 @@
     applyFilter();
   }
 
+  // Opção "Melhorias nos relatórios": desligada, os relatórios e grades
+  // ficam como o CS mostra (sem barra, colunas, layout, badges, 1000 linhas).
+  function relatoriosOn() { return settings.enabled && settings.reportsPlus !== false; }
+
   function improveReports() {
-    if (!settings.enabled) return;
+    if (!relatoriosOn()) return;
     findReportTables().forEach((t, i) => {
       if (settings.exportBar) addExportBar(t, document.querySelectorAll(".cs-export-bar").length + i);
       else { t.dataset.csDone = "1"; decorateTable(t); wrapTable(t); }
@@ -2181,7 +2187,7 @@
   // Ações › Formato › Linhas por Página. A grade carrega depois da página,
   // então tenta algumas vezes até ela existir.
   async function applyRowsMax() {
-    if (!settings.enabled || !settings.rows1000) return false;
+    if (!relatoriosOn() || !settings.rows1000) return false;
     for (let i = 0; i < 20; i++) {
       if (document.querySelector(".a-IG")) {
         if (i) await sleep(150);
@@ -2307,7 +2313,7 @@
   }
   let prepRunning = false;
   async function prepGrids() {
-    if (prepRunning) return;
+    if (prepRunning || !relatoriosOn()) return;
     prepRunning = true;
     const initial = new Set(document.querySelectorAll(".a-IG"));
     try {
@@ -2335,7 +2341,7 @@
   // 1000 linhas e o layout da tela.
   let gridPrepTimer = null;
   function schedulePrepNewGrids() {
-    if (!settings.enabled || prepRunning) return;
+    if (!relatoriosOn() || prepRunning) return;
     if (!document.querySelector(".a-IG:not([data-cs-prep])")) return;
     clearTimeout(gridPrepTimer);
     gridPrepTimer = setTimeout(() => {
@@ -2346,7 +2352,7 @@
 
   // Botão "Colunas" na barra de cada grade: marcar o que aparece
   function addColsButtons() {
-    if (!settings.enabled) return;
+    if (!relatoriosOn()) return;
     document.querySelectorAll(".a-IG .a-Toolbar").forEach((tb) => {
       if (tb.querySelector(".css-cols-btn") || tb.closest("#css-dash")) return;
       const b = document.createElement("button");
@@ -2404,7 +2410,7 @@
 
   let fitTimer = null;
   function scheduleFitGrids(delay) {
-    if (!settings.enabled || !settings.fitGrids || settings.rows1000) return;
+    if (!relatoriosOn() || !settings.fitGrids || settings.rows1000) return;
     clearTimeout(fitTimer);
     fitTimer = setTimeout(async () => {
       if (!document.querySelector(".a-IG")) return;
@@ -2416,7 +2422,7 @@
   // Grades de altura fixa: esticar até o rodapé (na carga e ao redimensionar)
   let fillTimer = null;
   function scheduleFillHeight(delay) {
-    if (!settings.enabled || !settings.fitGrids) return;
+    if (!relatoriosOn() || !settings.fitGrids) return;
     clearTimeout(fillTimer);
     fillTimer = setTimeout(() => { if (document.querySelector(".a-IG")) bridge("fill-height"); }, delay);
   }
@@ -2425,8 +2431,10 @@
   async function afterLoad() {
     if (!settings.enabled) { gridReady(); return; }
     if (isLoginPage()) { gridReady(); prepLoginGef(); return; }
-    prepGrids().catch(() => {}).then(gridReady);
-    if (!settings.rows1000) scheduleFitGrids(2500); // 2ª passada pela altura real
+    if (relatoriosOn()) {
+      prepGrids().catch(() => {}).then(gridReady);
+      if (!settings.rows1000) scheduleFitGrids(2500); // 2ª passada pela altura real
+    } else gridReady();
 
     let pilotStarted = false;
     if (pilotShouldResume()) {
@@ -2590,6 +2598,8 @@
       const old = settings;
       settings = { ...DEFAULTS, ...changes[KEY].newValue };
       if (old.enabled !== settings.enabled) { location.reload(); return; }
+      // Desfazer layout/colunas/barras das grades já desenhadas só recarregando.
+      if ((old.reportsPlus !== false) !== (settings.reportsPlus !== false)) { location.reload(); return; }
       const gridChanged = old.rows1000 !== settings.rows1000 || old.fitGrids !== settings.fitGrids;
       if (old.exportBar !== settings.exportBar) {
         if (!settings.exportBar) {

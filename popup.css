@@ -319,3 +319,8 @@ input[type="range"] {
 .upd-btn.hot:hover { filter: brightness(1.08); }
 .upd-btn:focus-visible { outline: 2px solid var(--p); outline-offset: 2px; }
 .upd-btn[hidden] { display: none; }
+
+/* Opções dos relatórios ficam apagadas com "Melhorias nos relatórios" desligado */
+.sub-opts { padding-left: 14px; border-left: 2px solid var(--border); margin-left: 6px; }
+.sub-opts.off { opacity: 0.45; }
+.sub-opts.off .check { cursor: not-allowed; }

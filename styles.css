@@ -59,7 +59,7 @@ html.cs-visual-on .apex-body-content {
 }
 
 /* Telas com relatório / grade usam a largura toda (antes ficavam estreitas no meio) */
-html.cs-visual-on.css-has-grid .t-Body-contentInner {
+html.cs-visual-on:not(.css-reports-off).css-has-grid .t-Body-contentInner {
   max-width: none !important;
 }
 
@@ -114,9 +114,9 @@ html.cs-visual-on .t-Button--primary:hover {
 /* ===== Regions / Cards ===== */
 html.cs-visual-on .t-Region,
 html.cs-visual-on .t-Card,
-html.cs-visual-on .a-IRR,
-html.cs-visual-on .t-IRR-region,
-html.cs-visual-on .a-GV {
+html.cs-visual-on:not(.css-reports-off) .a-IRR,
+html.cs-visual-on:not(.css-reports-off) .t-IRR-region,
+html.cs-visual-on:not(.css-reports-off) .a-GV {
   background: var(--cs-card) !important;
   border: 1px solid var(--cs-border) !important;
   border-radius: var(--cs-radius) !important;
@@ -131,40 +131,40 @@ html.cs-visual-on .t-Region-title {
 }
 
 /* ===== Tabelas / Relatórios e Grades Interativas ===== */
-html.cs-visual-on .cs-table-wrap {
+html.cs-visual-on:not(.css-reports-off) .cs-table-wrap {
   overflow-x: auto !important;
   border-radius: 0 0 var(--cs-radius) var(--cs-radius);
 }
 
-html.cs-visual-on.cs-sticky-header .cs-table-wrap {
+html.cs-visual-on:not(.css-reports-off).cs-sticky-header .cs-table-wrap {
   max-height: 72vh;
   overflow: auto !important;
 }
 
-html.cs-visual-on table.t-Report-report,
-html.cs-visual-on table.a-IRR-table,
-html.cs-visual-on table.uReport,
-html.cs-visual-on .t-Report table {
+html.cs-visual-on:not(.css-reports-off) table.t-Report-report,
+html.cs-visual-on:not(.css-reports-off) table.a-IRR-table,
+html.cs-visual-on:not(.css-reports-off) table.uReport,
+html.cs-visual-on:not(.css-reports-off) .t-Report table {
   width: 100% !important;
   border-collapse: separate !important;
   border-spacing: 0 !important;
   font-size: calc(var(--cs-font-size, 14px) - 0.5px) !important;
 }
 
-html.cs-visual-on .cs-table-wrap thead th,
-html.cs-visual-on .cs-table-wrap th.a-IRR-header {
+html.cs-visual-on:not(.css-reports-off) .cs-table-wrap thead th,
+html.cs-visual-on:not(.css-reports-off) .cs-table-wrap th.a-IRR-header {
   background: var(--cs-table-header) !important;
   color: var(--cs-table-header-text) !important;
   padding: 10px 12px !important;
 }
 
-html.cs-visual-on .cs-table-wrap th.a-IRR-header a,
-html.cs-visual-on .cs-table-wrap thead th a {
+html.cs-visual-on:not(.css-reports-off) .cs-table-wrap th.a-IRR-header a,
+html.cs-visual-on:not(.css-reports-off) .cs-table-wrap thead th a {
   color: inherit !important;
 }
 
-html.cs-visual-on.cs-sticky-header .cs-table-wrap thead th,
-html.cs-visual-on.cs-sticky-header .cs-table-wrap th.a-IRR-header {
+html.cs-visual-on:not(.css-reports-off).cs-sticky-header .cs-table-wrap thead th,
+html.cs-visual-on:not(.css-reports-off).cs-sticky-header .cs-table-wrap th.a-IRR-header {
   position: sticky !important;
   top: 0 !important;
   z-index: 20 !important;
@@ -174,24 +174,24 @@ html.cs-visual-on.cs-sticky-header .cs-table-wrap th.a-IRR-header {
   border: none !important;
 }
 
-html.cs-visual-on .cs-table-wrap tbody td {
+html.cs-visual-on:not(.css-reports-off) .cs-table-wrap tbody td {
   padding: 8.5px 12px !important;
   border-bottom: 1px solid var(--cs-border) !important;
   color: var(--cs-text) !important;
   background: var(--cs-card) !important;
 }
 
-html.cs-visual-on.cs-zebra .cs-table-wrap tbody tr:nth-child(even) td,
-html.cs-visual-on.cs-zebra .a-IG .a-GV-bdy tr.a-GV-row:nth-child(even):not(.is-selected):not(.is-hover) .a-GV-cell {
+html.cs-visual-on:not(.css-reports-off).cs-zebra .cs-table-wrap tbody tr:nth-child(even) td,
+html.cs-visual-on:not(.css-reports-off).cs-zebra .a-IG .a-GV-bdy tr.a-GV-row:nth-child(even):not(.is-selected):not(.is-hover) .a-GV-cell {
   background-color: var(--cs-zebra) !important;
 }
 
-html.cs-visual-on.cs-hover .cs-table-wrap tbody tr:hover td,
-html.cs-visual-on.cs-hover .a-IG .a-GV-bdy tr.a-GV-row:not(.is-selected):hover .a-GV-cell {
+html.cs-visual-on:not(.css-reports-off).cs-hover .cs-table-wrap tbody tr:hover td,
+html.cs-visual-on:not(.css-reports-off).cs-hover .a-IG .a-GV-bdy tr.a-GV-row:not(.is-selected):hover .a-GV-cell {
   background-color: var(--cs-hover) !important;
 }
 
-html.cs-visual-on .cs-table-wrap td a {
+html.cs-visual-on:not(.css-reports-off) .cs-table-wrap td a {
   color: var(--cs-primary) !important;
   font-weight: 600;
 }
@@ -288,8 +288,8 @@ html.cs-visual-on .apex-item-select {
   border: 1px solid var(--cs-border) !important;
 }
 
-html.cs-visual-on .a-GV input,
-html.cs-visual-on .a-GV select {
+html.cs-visual-on:not(.css-reports-off) .a-GV input,
+html.cs-visual-on:not(.css-reports-off) .a-GV select {
   border-radius: 0 !important;
 }
 
@@ -1128,16 +1128,16 @@ html.css-fit-grids .a-GV-cell,
 html.css-fit-grids .a-GV-headerLabel {
   font-size: 13px !important;
 }
-html.cs-visual-on .a-IG .a-GV-header {
+html.cs-visual-on:not(.css-reports-off) .a-IG .a-GV-header {
   background: color-mix(in srgb, var(--cs-bg) 80%, var(--cs-card)) !important;
   border-bottom: 1.5px solid var(--cs-border) !important;
 }
-html.cs-visual-on .a-IG .a-GV-headerLabel {
+html.cs-visual-on:not(.css-reports-off) .a-IG .a-GV-headerLabel {
   font-weight: 700 !important;
   color: var(--cs-navy) !important;
   letter-spacing: -0.01em;
 }
-html.cs-visual-on .a-IG .a-GV-bdy .a-GV-cell {
+html.cs-visual-on:not(.css-reports-off) .a-IG .a-GV-bdy .a-GV-cell {
   padding-top: 6px !important;
   padding-bottom: 6px !important;
   border-color: color-mix(in srgb, var(--cs-border) 75%, transparent) !important;
