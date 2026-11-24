@@ -191,3 +191,18 @@ chrome.storage.sync.get([KEY], (res) => {
   bind();
   takeClipboard();
 });
+
+// Versão no topo: a do código ativo (pode ter vindo pelo botão "Atualizar")
+// e, se for diferente, a do motor instalado na pasta.
+(function mostrarVersao() {
+  const el = $("ver-badge");
+  if (!el) return;
+  const motor = chrome.runtime.getManifest().version;
+  el.textContent = "v" + motor;
+  chrome.runtime.sendMessage({ type: "css-update-state" }, (st) => {
+    void chrome.runtime.lastError;
+    if (!st || !st.ativa) return;
+    el.textContent = "v" + st.ativa;
+    if (st.ativa !== motor) el.title = "Código das telas " + st.ativa + " · motor " + motor;
+  });
+})();

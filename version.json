@@ -1,6 +1,6 @@
 {
-  "version": "1.4.1",
-  "engine": "1.4.0",
-  "notas": "Aviso de atualizado para X (teste)",
+  "version": "1.4.2",
+  "engine": "1.4.2",
+  "notas": "Popup mostra a versao ativa",
   "data": "2026-11-24"
 }
