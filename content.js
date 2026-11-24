@@ -1234,7 +1234,10 @@
   }
   function addShortcut(it) {
     if (findShortcut(it.app, it.path, it.action)) return false;
-    const pp = apexParts(it.url || "");
+    // Sem URL (atalho escolhido no painel "Adicionar"), não grava página:
+    // apexParts("") resolvia para a tela ATUAL e todo atalho abria nela.
+    // Sem página, o atalho é achado pelo caminho no menu do módulo.
+    const pp = it.url ? apexParts(it.url) : null;
     shortcuts.push({
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       label: (it.label || it.action || it.path[it.path.length - 1] || "Atalho").slice(0, 60),
