@@ -2415,8 +2415,21 @@
       } catch { r({}); }
     });
   }
+  // Confirma a atualização: na primeira página depois de trocar de versão
+  // mostra "atualizado para X" uma vez.
+  function avisarSeAtualizou() {
+    const atual = chrome.runtime.getManifest().version;
+    chrome.storage.local.get(["cssLastVersion"], (r) => {
+      const antes = r && r.cssLastVersion;
+      if (antes === atual) return;
+      chrome.storage.local.set({ cssLastVersion: atual });
+      avisoAtualizacao(`CS Simples atualizado para ${atual} ✔`);
+    });
+  }
+
   async function verificarAtualizacao() {
     if (!extAlive() || window !== window.top) return;
+    avisarSeAtualizou();
     const st = await pedirMotor({ type: "css-update-state" });
     if (!st.motor) return;
     if (st.disco && versaoMaior(st.disco, st.motor)) {
