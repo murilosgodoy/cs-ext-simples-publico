@@ -1,22 +1,54 @@
 CS Simples - extensão do Chrome para o CS (Usina São Luiz)
+==========================================================
 
-Instalar (só uma vez)
-1. Rode o ATUALIZAR-CS-SIMPLES.bat. Ele coloca a extensão em C:\CS-Simples.
-2. No Chrome, abra chrome://extensions e ligue o "Modo do desenvolvedor" (canto superior direito).
+INSTALAR (só uma vez em cada computador)
+----------------------------------------
+1. Rode o ATUALIZAR-CS-SIMPLES.bat.
+   Se aparecer "O Windows protegeu o computador", clique em
+   "Mais informações" e depois em "Executar assim mesmo".
+   Ele coloca a extensão na pasta C:\CS-Simples.
+2. No Chrome, abra chrome://extensions e ligue o "Modo do desenvolvedor"
+   (canto superior direito).
 3. Clique em "Carregar sem compactação" e escolha a pasta C:\CS-Simples.
 4. Clique em "Detalhes" no CS Simples e ligue "Permitir scripts de usuário".
    É isso que deixa atualizar com 1 clique.
+5. Dê F5 na tela do CS.
 
-Atualizar
-- Quando sair versão nova, aparece um aviso no canto da tela do CS.
-- Clique em "Atualizar". A extensão baixa a versão nova e recarrega a página.
-- De vez em quando (mudança maior), o aviso pede para rodar o
-  C:\CS-Simples\ATUALIZAR-CS-SIMPLES.bat. Depois clique em "Aplicar atualização".
 
-Se o antivírus bloquear o .bat (sem script)
-1. Baixe https://github.com/murilosgodoy/cs-ext-simples-publico/archive/refs/heads/main.zip
-2. Abra o .zip, entre na pasta cs-ext-simples-publico-main e copie tudo o que tem dentro
-   para C:\CS-Simples, substituindo os arquivos.
-3. Volte ao CS e clique em "Aplicar atualização" no aviso.
+ATUALIZAR (quando sair versão nova)
+-----------------------------------
+Quando sair versão nova, aparece um aviso no canto inferior direito da tela
+do CS (pode levar até 6 horas depois de publicada). O aviso diz o que fazer:
+
+A) Aviso com o botão "Atualizar"  (o caso mais comum)
+   1. Clique em "Atualizar".
+   2. A página recarrega sozinha e aparece "CS Simples atualizado para X".
+   Pronto. Não precisa rodar nada.
+
+B) Aviso "precisa ser instalada: rode ATUALIZAR-CS-SIMPLES"
+   (acontece de vez em quando, em mudanças maiores)
+   1. Abra a pasta C:\CS-Simples e rode o ATUALIZAR-CS-SIMPLES.bat.
+   2. Volte ao CS e dê F5.
+   3. Clique em "Aplicar atualização" no aviso.
+   4. Aparece "CS Simples atualizado para X".
+
+C) Aviso com o botão "Abrir configuração"
+   A opção "Permitir scripts de usuário" está desligada.
+   1. Clique em "Abrir configuração".
+   2. Ligue "Permitir scripts de usuário".
+   3. Volte ao CS, dê F5 e clique em "Atualizar".
+
+
+SE ALGO DER ERRADO
+------------------
+- O botão virou "Tentar de novo": dê F5 na tela do CS e clique de novo.
+- O antivírus bloqueou o .bat: faça a atualização sem script:
+  1. Baixe https://github.com/murilosgodoy/cs-ext-simples-publico/archive/refs/heads/main.zip
+  2. Abra o .zip, entre na pasta cs-ext-simples-publico-main e copie tudo o
+     que tem dentro para C:\CS-Simples, substituindo os arquivos.
+  3. Volte ao CS, dê F5 e clique em "Aplicar atualização".
+- Ver a versão em uso: clique no ícone do CS Simples na barra do Chrome
+  (o número aparece no topo). Em chrome://extensions pode aparecer um número
+  menor: é a versão da pasta, e as atualizações de 1 clique rodam por cima dela.
 
 Não mova nem apague a pasta C:\CS-Simples: o Chrome carrega a extensão dela.
