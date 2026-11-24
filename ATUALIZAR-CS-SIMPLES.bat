@@ -1,46 +1,28 @@
 @echo off
 chcp 65001 >nul
 rem CS Simples - instala ou atualiza a extensao em C:\CS-Simples
-rem Baixa a ultima versao do repositorio publico murilosgodoy/cs-ext-simples-publico.
-
-rem Este .bat tambem vem no pacote e seria sobrescrito enquanto roda:
-rem copia para a pasta temporaria e continua de la.
-if /i not "%~dp0"=="%TEMP%\" (
-  copy /y "%~f0" "%TEMP%\ATUALIZAR-CS-SIMPLES.bat" >nul
-  "%TEMP%\ATUALIZAR-CS-SIMPLES.bat"
-  exit /b
-)
-
+rem Baixa o .zip do repositorio publico murilosgodoy/cs-ext-simples-publico
+rem com o curl e o tar que ja vem no Windows 10/11 (sem PowerShell).
 set "DESTINO=C:\CS-Simples"
 set "ZIP_URL=https://github.com/murilosgodoy/cs-ext-simples-publico/archive/refs/heads/main.zip"
-set "TMPDIR=%TEMP%\cs-simples-download"
+set "ZIP=%TEMP%\cs-simples.zip"
+set "PASTA=%TEMP%\cs-simples"
 
 echo =========================================================
 echo   CS Simples - baixando a ultima versao
 echo =========================================================
-if exist "%TMPDIR%" rmdir /s /q "%TMPDIR%"
-mkdir "%TMPDIR%"
+curl.exe -L -f -s -o "%ZIP%" "%ZIP_URL%"
+if errorlevel 1 goto erro_download
 
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "$ErrorActionPreference='Stop';" ^
-  "Invoke-WebRequest -UseBasicParsing -Uri '%ZIP_URL%' -OutFile '%TMPDIR%\cs.zip';" ^
-  "Expand-Archive -Path '%TMPDIR%\cs.zip' -DestinationPath '%TMPDIR%' -Force"
-if errorlevel 1 (
-  echo.
-  echo [ERRO] Nao consegui baixar. Confira a internet e tente de novo.
-  pause
-  exit /b 1
-)
+if exist "%PASTA%" rmdir /s /q "%PASTA%"
+mkdir "%PASTA%"
+tar.exe -xf "%ZIP%" -C "%PASTA%"
+if errorlevel 1 goto erro_download
 
 if not exist "%DESTINO%" mkdir "%DESTINO%"
-robocopy "%TMPDIR%\cs-ext-simples-publico-main" "%DESTINO%" /MIR /NFL /NDL /NJH /NJS /R:2 /W:1
-if %ERRORLEVEL% GEQ 8 (
-  echo.
-  echo [ERRO] Nao consegui copiar para %DESTINO%. Codigo do robocopy: %ERRORLEVEL%
-  pause
-  exit /b 1
-)
-rmdir /s /q "%TMPDIR%"
+rem O proprio .bat fica de fora da copia: ele esta rodando agora.
+robocopy "%PASTA%\cs-ext-simples-publico-main" "%DESTINO%" /MIR /XF ATUALIZAR-CS-SIMPLES.bat /NFL /NDL /NJH /NJS /R:2 /W:1
+if %ERRORLEVEL% GEQ 8 goto erro_copia
 
 echo.
 echo [OK] CS Simples atualizado em %DESTINO%
@@ -50,3 +32,18 @@ echo  - Primeira vez? No Chrome, abra chrome://extensions, ligue o "Modo do
 echo    desenvolvedor", clique em "Carregar sem compactacao" e escolha %DESTINO%
 echo.
 pause
+rem Atualiza este .bat por ultimo, numa linha so (o cmd le a linha inteira antes).
+(copy /y "%PASTA%\cs-ext-simples-publico-main\ATUALIZAR-CS-SIMPLES.bat" "%DESTINO%\" >nul & del "%ZIP%" & rmdir /s /q "%PASTA%" & exit /b 0)
+
+:erro_download
+echo.
+echo [ERRO] Nao consegui baixar a atualizacao. Confira a internet e tente de novo.
+echo Se continuar, baixe manualmente: %ZIP_URL%
+pause
+exit /b 1
+
+:erro_copia
+echo.
+echo [ERRO] Nao consegui copiar para %DESTINO%. Codigo do robocopy: %ERRORLEVEL%
+pause
+exit /b 1
