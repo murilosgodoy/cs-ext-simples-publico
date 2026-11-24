@@ -93,10 +93,19 @@ function command(name, msg, close) {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const tab = tabs && tabs[0];
     if (!tab || tab.id == null) { saved("⚠ abra a aba do CS"); return; }
-    chrome.tabs.sendMessage(tab.id, { type: "cs-command", name }, (res) => {
-      if (chrome.runtime.lastError || !res || !res.ok) { saved("⚠ abra a aba do CS"); return; }
+    const pronto = (res) => {
+      if (!res || !res.ok) { saved("⚠ abra a aba do CS"); return; }
       saved(msg);
       if (close) setTimeout(() => window.close(), 250);
+    };
+    chrome.tabs.sendMessage(tab.id, { type: "cs-command", name }, (res) => {
+      if (!chrome.runtime.lastError) { pronto(res); return; }
+      // Código atualizado pelo botão "Atualizar" roda como user script e não
+      // recebe tabs.sendMessage: o motor (background.js) repassa pela porta.
+      chrome.runtime.sendMessage({ type: "css-tab-command", tabId: tab.id, name }, (r) => {
+        void chrome.runtime.lastError;
+        pronto(r);
+      });
     });
   });
 }

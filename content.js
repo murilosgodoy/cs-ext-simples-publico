@@ -2381,13 +2381,13 @@
   }
 
   // ===== Aviso de versão nova =====
-  // O repositório público tem um version.json com a última versão. A extensão
-  // compara com a versão carregada e com a que está no disco:
-  //   disco > carregada   -> o ATUALIZAR já baixou: botão "Aplicar" recarrega
-  //   público > carregada -> avisa para rodar o ATUALIZAR-CS-SIMPLES.bat
-  // Consulta o GitHub no máximo a cada 6 h; erro de rede não mostra nada.
-  const RELEASE_VERSION_URL = "https://raw.githubusercontent.com/murilosgodoy/cs-ext-simples-publico/main/version.json";
-  const UPDATE_KEY = "cssUpdateCheck";
+  // O motor (background.js) compara a versão ativa com o version.json do
+  // repositório público (no máximo a cada 6 h) e diz o que dá para fazer:
+  //   - código novo e "Permitir scripts de usuário" ligado: botão Atualizar
+  //     (1 clique, o motor baixa e a página recarrega);
+  //   - opção desligada: botão que abre a página da extensão para ligar;
+  //   - motor novo (manifest/popup/O.S.): pede o ATUALIZAR-CS-SIMPLES.bat;
+  //   - .bat já rodou (disco mais novo): botão Aplicar recarrega a extensão.
   function versaoMaior(a, b) {
     const pa = String(a || "0").split(".").map(Number), pb = String(b || "0").split(".").map(Number);
     for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
@@ -2397,46 +2397,54 @@
     return false;
   }
   function avisoAtualizacao(texto, botao, acao) {
-    if (document.getElementById("css-update")) return;
+    document.getElementById("css-update")?.remove();
     const el = document.createElement("div");
     el.id = "css-update";
     el.setAttribute("role", "status");
     el.innerHTML = `<span></span><button type="button" class="css-update-go"></button><button type="button" class="css-update-x" aria-label="Fechar aviso">✕</button>`;
     el.querySelector("span").textContent = texto;
     const go = el.querySelector(".css-update-go");
-    if (botao) { go.textContent = botao; go.addEventListener("click", acao); } else go.remove();
+    if (botao) { go.textContent = botao; go.addEventListener("click", () => acao(go)); } else go.remove();
     el.querySelector(".css-update-x").addEventListener("click", () => el.remove());
     document.body.appendChild(el);
   }
+  function pedirMotor(msg) {
+    return new Promise((r) => {
+      try {
+        chrome.runtime.sendMessage(msg, (x) => { void chrome.runtime.lastError; r(x || {}); });
+      } catch { r({}); }
+    });
+  }
   async function verificarAtualizacao() {
     if (!extAlive() || window !== window.top) return;
-    const carregada = chrome.runtime.getManifest().version;
-    try {
-      const disco = await new Promise((r) => chrome.runtime.sendMessage({ type: "css-disk-version" }, (x) => {
-        void chrome.runtime.lastError;
-        r(x && x.version);
-      }));
-      if (versaoMaior(disco, carregada)) {
-        avisoAtualizacao(`CS Simples ${disco} já foi baixado.`, "Aplicar atualização", () => {
-          try { chrome.runtime.sendMessage({ type: "css-reload" }); } catch { /* ignore */ }
-          setTimeout(() => location.reload(), 900);
-        });
-        return;
-      }
-    } catch { /* ignore */ }
-    try {
-      const cache = await new Promise((r) => chrome.storage.local.get([UPDATE_KEY], (x) => r((x && x[UPDATE_KEY]) || {})));
-      let remota = cache.version;
-      if (!cache.at || Date.now() - cache.at > 6 * 3600 * 1000) {
-        const res = await fetch(RELEASE_VERSION_URL, { cache: "no-store" });
-        if (!res.ok) return;
-        remota = (await res.json()).version;
-        chrome.storage.local.set({ [UPDATE_KEY]: { at: Date.now(), version: remota } });
-      }
-      if (versaoMaior(remota, carregada)) {
-        avisoAtualizacao(`Nova versão do CS Simples (${remota}). Rode "ATUALIZAR-CS-SIMPLES" na pasta C:\\CS-Simples e depois clique em Aplicar.`);
-      }
-    } catch { /* sem rede ou GitHub fora: tenta na próxima */ }
+    const st = await pedirMotor({ type: "css-update-state" });
+    if (!st.motor) return;
+    if (st.disco && versaoMaior(st.disco, st.motor)) {
+      avisoAtualizacao(`CS Simples ${st.disco} já foi baixado.`, "Aplicar atualização", () => {
+        pedirMotor({ type: "css-reload" });
+        setTimeout(() => location.reload(), 900);
+      });
+      return;
+    }
+    if (!st.remota || !versaoMaior(st.remota, st.ativa)) return;
+    if (versaoMaior(st.engine, st.motor)) {
+      avisoAtualizacao(`Nova versão do CS Simples (${st.remota}) precisa ser instalada: rode "ATUALIZAR-CS-SIMPLES" na pasta C:\\CS-Simples.`);
+      return;
+    }
+    if (!st.userScripts) {
+      avisoAtualizacao(`Nova versão do CS Simples (${st.remota}). Para atualizar com 1 clique, ligue "Permitir scripts de usuário" na página da extensão (só uma vez).`,
+        "Abrir configuração", () => pedirMotor({ type: "css-open-ext" }));
+      return;
+    }
+    avisoAtualizacao(`Nova versão do CS Simples (${st.remota}).`, "Atualizar", async (btn) => {
+      btn.disabled = true;
+      btn.textContent = "Atualizando…";
+      const r = await pedirMotor({ type: "css-update-apply" });
+      if (r.ok) { location.reload(); return; }
+      btn.disabled = false;
+      btn.textContent = "Tentar de novo";
+      toast("Não consegui atualizar agora" + (r.err ? ": " + r.err : ""));
+    });
   }
 
   function init() {

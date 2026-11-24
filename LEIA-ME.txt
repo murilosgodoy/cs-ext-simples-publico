@@ -1,14 +1,17 @@
 CS Simples - extensão do Chrome para o CS (Usina São Luiz)
 
-Instalar (primeira vez)
+Instalar (só uma vez)
 1. Rode o ATUALIZAR-CS-SIMPLES.bat. Ele coloca a extensão em C:\CS-Simples.
 2. No Chrome, abra chrome://extensions e ligue o "Modo do desenvolvedor" (canto superior direito).
 3. Clique em "Carregar sem compactação" e escolha a pasta C:\CS-Simples.
+4. Clique em "Detalhes" no CS Simples e ligue "Permitir scripts de usuário".
+   É isso que deixa atualizar com 1 clique.
 
 Atualizar
-1. Quando sair versão nova, aparece um aviso no canto da tela do CS.
-2. Rode C:\CS-Simples\ATUALIZAR-CS-SIMPLES.bat.
-3. Volte ao CS e clique em "Aplicar atualização" no aviso.
+- Quando sair versão nova, aparece um aviso no canto da tela do CS.
+- Clique em "Atualizar". A extensão baixa a versão nova e recarrega a página.
+- De vez em quando (mudança maior), o aviso pede para rodar o
+  C:\CS-Simples\ATUALIZAR-CS-SIMPLES.bat. Depois clique em "Aplicar atualização".
 
 Se o antivírus bloquear o .bat (sem script)
 1. Baixe https://github.com/murilosgodoy/cs-ext-simples-publico/archive/refs/heads/main.zip
