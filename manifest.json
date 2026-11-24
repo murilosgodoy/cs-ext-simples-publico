@@ -1,0 +1,85 @@
+{
+  "manifest_version": 3,
+  "name": "CS Simples - Usina São Luiz",
+  "version": "1.3.0",
+  "minimum_chrome_version": "111",
+  "description": "CS (Oracle APEX) da Usina São Luiz: entra direto na GEF 1.3.1, dashboard simples de atalhos, relatórios aprimorados e O.S. com RG AOO_001 no verso.",
+  "permissions": [
+    "storage",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "https://cs.usinasaoluiz.com.br/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://cs.usinasaoluiz.com.br/ords/apex/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "https://cs.usinasaoluiz.com.br/ords/apex/*"
+      ],
+      "js": [
+        "page-bridge.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_idle",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "https://cs.usinasaoluiz.com.br/ords/apex/r/*/cs-principal/por-favor-aguarde*"
+      ],
+      "js": [
+        "os-verso-config.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "https://cs.usinasaoluiz.com.br/ords/apex/r/*/cs-principal/por-favor-aguarde*"
+      ],
+      "js": [
+        "lib/pdf-lib.min.js",
+        "rg-verso.js",
+        "os-verso.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "CS Simples"
+  },
+  "icons": {
+    "16": "icon-16.png",
+    "48": "icon-48.png",
+    "128": "icon-128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "logo-usl-crop.png"
+      ],
+      "matches": [
+        "https://cs.usinasaoluiz.com.br/*"
+      ]
+    }
+  ]
+}
