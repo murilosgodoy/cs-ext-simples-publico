@@ -151,7 +151,21 @@ async function modoAtual() {
   return "";
 }
 
-chrome.runtime.onInstalled.addListener(() => { registrar().catch((e) => console.warn("[CS Simples]", e)); });
+chrome.runtime.onInstalled.addListener(async () => {
+  try { await registrar(); } catch (e) { console.warn("[CS Simples]", e); }
+  // "Aplicar atualização" pelo popup: recarrega as abas do CS só nesse caso
+  // (um F5 automático em outras horas poderia perder um formulário aberto).
+  const r = await chrome.storage.local.get("cssReloadTabs");
+  if (!r.cssReloadTabs) return;
+  await chrome.storage.local.remove("cssReloadTabs");
+  recarregarAbasCS();
+});
+function recarregarAbasCS() {
+  chrome.tabs.query({ url: "https://cs.usinasaoluiz.com.br/*" }, (abas) => {
+    void chrome.runtime.lastError;
+    (abas || []).forEach((a) => chrome.tabs.reload(a.id));
+  });
+}
 chrome.runtime.onStartup.addListener(() => { registrar().catch((e) => console.warn("[CS Simples]", e)); });
 
 // ---------- versões ----------
@@ -172,14 +186,14 @@ async function versaoNoDisco() {
   try { return (await (await fetch(chrome.runtime.getURL("manifest.json"), { cache: "no-store" })).json()).version; }
   catch { return null; }
 }
-async function estado() {
+async function estado(forcar) {
   const b = await lerBundle();
   const us = userScriptsOk();
   // Opção ligada depois de baixar a versão: registra sem pedir novo clique.
   const modo = await modoAtual();
   if ((b && us && modo !== "remoto") || (!(b && us) && modo !== "pacote")) await registrar();
   const ativa = b && us ? b.version : motor();
-  const r = await checarRemoto(false);
+  const r = await checarRemoto(!!forcar);
   return { ativa, motor: motor(), disco: await versaoNoDisco(), remota: r.version, engine: r.engine, userScripts: us };
 }
 
@@ -212,10 +226,19 @@ function tratar(msg, sender, sendResponse, doUserScript) {
     area[msg.op](msg.arg).then((r) => sendResponse(r || {}), (e) => sendResponse({ __err: String(e && e.message || e) }));
     return true;
   }
-  if (msg.type === "css-update-state") { estado().then(sendResponse, () => sendResponse({})); return true; }
+  if (msg.type === "css-update-state") { estado(false).then(sendResponse, () => sendResponse({})); return true; }
+  // Botão "Verificar atualização" do popup: consulta o GitHub agora.
+  if (msg.type === "css-update-check") { estado(true).then(sendResponse, () => sendResponse({})); return true; }
   if (msg.type === "css-update-apply") {
-    aplicar().then(sendResponse, (e) => sendResponse({ ok: false, err: String(e && e.message || e) }));
+    aplicar().then((r) => {
+      if (r && r.ok && msg.recarregarAbas) recarregarAbasCS();
+      sendResponse(r);
+    }, (e) => sendResponse({ ok: false, err: String(e && e.message || e) }));
     return true;
+  }
+  if (msg.type === "css-reload-apply") {
+    chrome.storage.local.set({ cssReloadTabs: true }).then(() => chrome.runtime.reload());
+    return;
   }
   if (msg.type === "css-reload") { chrome.runtime.reload(); return; }
   if (msg.type === "css-open-ext") { chrome.tabs.create({ url: "chrome://extensions/?id=" + chrome.runtime.id }); return; }

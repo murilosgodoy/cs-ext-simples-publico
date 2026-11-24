@@ -39,6 +39,14 @@ C) Aviso com o botão "Abrir configuração"
    3. Volte ao CS, dê F5 e clique em "Atualizar".
 
 
+VERIFICAR NA HORA (sem esperar o aviso)
+---------------------------------------
+Clique no ícone do CS Simples na barra do Chrome. Logo abaixo do topo tem o
+botão "Verificar atualização". Ele consulta na hora e mostra o próximo passo
+com um botão: "Atualizar agora", "Aplicar atualização" ou "Abrir configuração".
+As abas do CS recarregam sozinhas depois de atualizar.
+
+
 SE ALGO DER ERRADO
 ------------------
 - O botão virou "Tentar de novo": dê F5 na tela do CS e clique de novo.

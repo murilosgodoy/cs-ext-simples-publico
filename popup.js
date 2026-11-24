@@ -192,17 +192,74 @@ chrome.storage.sync.get([KEY], (res) => {
   takeClipboard();
 });
 
-// Versão no topo: a do código ativo (pode ter vindo pelo botão "Atualizar")
-// e, se for diferente, a do motor instalado na pasta.
-(function mostrarVersao() {
-  const el = $("ver-badge");
-  if (!el) return;
+// Versão no topo + "Verificar atualização". O motor (background.js) diz o
+// estado e o popup mostra o próximo passo com um botão só.
+(function atualizacao() {
+  const badge = $("ver-badge"), txt = $("upd-txt"), btn = $("upd-btn");
+  if (!badge || !txt || !btn) return;
   const motor = chrome.runtime.getManifest().version;
-  el.textContent = "v" + motor;
-  chrome.runtime.sendMessage({ type: "css-update-state" }, (st) => {
-    void chrome.runtime.lastError;
-    if (!st || !st.ativa) return;
-    el.textContent = "v" + st.ativa;
-    if (st.ativa !== motor) el.title = "Código das telas " + st.ativa + " · motor " + motor;
+  badge.textContent = "v" + motor;
+  const pedir = (m) => new Promise((r) => {
+    try { chrome.runtime.sendMessage(m, (x) => { void chrome.runtime.lastError; r(x || {}); }); }
+    catch { r({}); }
   });
+  const maior = (a, b) => {
+    const pa = String(a || "0").split(".").map(Number), pb = String(b || "0").split(".").map(Number);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+      const d = (pa[i] || 0) - (pb[i] || 0);
+      if (d) return d > 0;
+    }
+    return false;
+  };
+  let acao = null;
+  btn.addEventListener("click", () => { if (acao) acao(); });
+  function mostrar(texto, rotulo, fn, destaque) {
+    txt.textContent = texto;
+    btn.hidden = !rotulo;
+    btn.textContent = rotulo || "";
+    btn.classList.toggle("hot", !!destaque);
+    acao = fn || null;
+  }
+  function versao(st) {
+    if (!st.ativa) return;
+    badge.textContent = "v" + st.ativa;
+    badge.title = st.ativa !== motor ? "Código das telas " + st.ativa + " · motor " + motor : "";
+  }
+  function decidir(st, consultou) {
+    versao(st);
+    const ativa = st.ativa || motor;
+    if (st.disco && maior(st.disco, st.motor)) {
+      return mostrar(`Versão ${st.disco} já baixada. Falta aplicar.`, "Aplicar atualização",
+        () => { mostrar("Aplicando… as abas do CS vão recarregar."); pedir({ type: "css-reload-apply" }); }, true);
+    }
+    if (!st.remota) {
+      return consultou
+        ? mostrar("Não consegui consultar o GitHub agora.", "Tentar de novo", verificar)
+        : mostrar(`Versão em uso: ${ativa}`, "Verificar atualização", verificar);
+    }
+    if (!maior(st.remota, ativa)) {
+      return mostrar(consultou ? `Você está na versão mais recente (${ativa}).` : `Versão em uso: ${ativa}`, "Verificar atualização", verificar);
+    }
+    if (maior(st.engine, st.motor)) {
+      return mostrar(`Versão ${st.remota} precisa ser instalada: rode C:\\CS-Simples\\ATUALIZAR-CS-SIMPLES.bat e clique em Verificar.`, "Verificar", verificar);
+    }
+    if (!st.userScripts) {
+      return mostrar(`Versão ${st.remota} disponível. Ligue "Permitir scripts de usuário" para atualizar com 1 clique.`, "Abrir configuração",
+        () => pedir({ type: "css-open-ext" }), true);
+    }
+    mostrar(`Versão ${st.remota} disponível.`, "Atualizar agora", async () => {
+      mostrar("Atualizando…");
+      const r = await pedir({ type: "css-update-apply", recarregarAbas: true });
+      if (r.ok) { versao({ ativa: r.version }); mostrar(`Atualizado para ${r.version} ✔ As abas do CS recarregaram.`); return; }
+      const motivo = r.err === "userScripts" ? ' Ligue "Permitir scripts de usuário".'
+        : r.err === "engine" ? " Rode o ATUALIZAR-CS-SIMPLES.bat." : r.err ? " (" + r.err + ")" : "";
+      mostrar("Não consegui atualizar." + motivo, "Tentar de novo", verificar);
+    }, true);
+  }
+  async function verificar() {
+    mostrar("Verificando…");
+    decidir(await pedir({ type: "css-update-check" }), true);
+  }
+  mostrar(`Versão em uso: ${motor}`, "Verificar atualização", verificar);
+  pedir({ type: "css-update-state" }).then((st) => { if (st.motor) decidir(st, false); });
 })();
