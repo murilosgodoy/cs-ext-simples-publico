@@ -1,6 +1,6 @@
 {
-  "version": "1.6.1",
-  "engine": "1.6.1",
-  "notas": "Opcao Melhorias nos relatorios (desligada = relatorios originais do CS) e campo Nome na tela inicial",
+  "version": "1.6.2",
+  "engine": "1.6.2",
+  "notas": "O.S. com verso: fecha o modal depois de imprimir (sem tela escura)",
   "data": "2026-11-24"
 }

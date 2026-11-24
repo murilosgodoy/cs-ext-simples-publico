@@ -106,7 +106,7 @@
       win.document.open();
       win.document.write(
         '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>O.S. + verso</title>' +
-        '<style>html,body{margin:0;height:100%;background:#0f172a;font:600 15px "Segoe UI",system-ui,sans-serif;color:#f8fafc}' +
+        '<style>html,body{margin:0;height:100%;background:#f1f5f9;font:600 15px "Segoe UI",system-ui,sans-serif;color:#1e293b}' +
         '#msg{display:flex;height:100%;align-items:center;justify-content:center;gap:10px}' +
         'iframe{border:0;width:100%;height:100%;display:block}</style></head>' +
         '<body><div id="msg">⚡ Preparando O.S. com verso (RG AOO_001)…</div></body></html>'
@@ -115,13 +115,31 @@
     } catch { /* ignore */ }
   }
 
-  function acionarImpressao(fr) {
+  // Quando a janela de impressão fecha, o foco volta (ou chega "afterprint"):
+  // aí fecha o modal "Por favor aguarde". Antes ele ficava aberto, escuro,
+  // esperando o "Fechar", e parecia uma tela preta.
+  function fecharAposImprimir(fr) {
+    let feito = false;
+    const fechar = () => {
+      if (feito) return;
+      feito = true;
+      rawSetTimeout(() => liberarFechar(true), 700);
+    };
+    rawSetTimeout(() => {
+      try { fr.contentWindow.addEventListener("afterprint", fechar, { once: true }); } catch { /* ignore */ }
+      window.addEventListener("afterprint", fechar, { once: true });
+      try { window.top.addEventListener("focus", fechar, { once: true }); } catch { /* ignore */ }
+    }, 500);
+  }
+
+  function acionarImpressao(fr, noModal) {
     if (!autoImprimir()) return;
     let done = false;
     const imprimir = () => {
       if (done) return;
       done = true;
       try { fr.contentWindow.focus(); fr.contentWindow.print(); } catch { /* ignore */ }
+      if (noModal) fecharAposImprimir(fr);
     };
     // O listener entra antes do src, então o load nunca se perde. Sem reserva
     // por tempo: ele chamava print() antes do PDF carregar e travava o "done".
@@ -157,6 +175,7 @@
     const d = win.document;
     const url = win.URL.createObjectURL(new win.Blob([bytes], { type: "application/pdf" }));
     d.body.innerHTML = "";
+    d.body.style.background = "#525659";
     const fr = d.createElement("iframe");
     fr.title = "O.S. + verso";
     acionarImpressao(fr);
@@ -187,7 +206,7 @@
   function mostrarNoModal(bytes) {
     expandirModalPai();
     const blobUrl = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
-    document.body.style.cssText = "margin:0;height:100vh;display:flex;flex-direction:column;background:#0f172a;font:13px 'Segoe UI',system-ui,sans-serif;overflow:hidden";
+    document.body.style.cssText = "margin:0;height:100vh;display:flex;flex-direction:column;background:#f1f5f9;font:13px 'Segoe UI',system-ui,sans-serif;overflow:hidden";
     document.body.innerHTML = `
       <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:#1f3158;color:#fff;flex:0 0 auto">
         <strong style="margin-right:auto">✔ O.S. + Verso (RG AOO_001) prontos</strong>
@@ -201,12 +220,12 @@
     const btn = document.getElementById("css-print-now");
     if (btn && fr) {
       btn.addEventListener("click", () => {
-        try { fr.contentWindow.focus(); fr.contentWindow.print(); } catch { window.open(blobUrl, "_blank"); }
+        try { fr.contentWindow.focus(); fr.contentWindow.print(); fecharAposImprimir(fr); } catch { window.open(blobUrl, "_blank"); }
       });
     }
     const fechar = document.getElementById("css-close-now");
     if (fechar) fechar.addEventListener("click", () => liberarFechar(true));
-    if (fr) acionarImpressao(fr);
+    if (fr) acionarImpressao(fr, true);
   }
 
   function interceptar(nav) {
@@ -221,17 +240,19 @@
       // duas janelas/mesclar o mesmo PDF duas vezes.
       autoClicou = true;
       const win = window.open("", "_blank");
+      segurarFechar = true;
+      prenderFechar();
       if (win) telaEspera(win);
-      else { segurarFechar = true; prenderFechar(); }
       (async () => {
         try {
           const bytes = await obterBytesMesclados(url);
-          if (win) mostrar(win, bytes);
+          if (win) { mostrar(win, bytes); liberarFechar(true); }
           else mostrarNoModal(bytes);
         } catch (e) {
           console.warn("[CS Simples] verso da O.S.: abrindo o PDF original —", e);
           if (win) {
             try { win.location.href = url; } catch { original.call(this, url, ...resto); }
+            liberarFechar(true);
           } else {
             liberarFechar(false); // mantém o modal aberto mostrando o PDF original
             location.href = url;
@@ -272,7 +293,10 @@
   function iniciarObservador() {
     if (!isPaginaOs || !document.body) return;
     tentarAutoVisualizar();
-    const obs = new MutationObserver(() => tentarAutoVisualizar());
+    const obs = new MutationObserver(() => {
+      if (autoClicou) { obs.disconnect(); return; }
+      tentarAutoVisualizar();
+    });
     obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["style", "class", "disabled", "hidden"] });
   }
 
